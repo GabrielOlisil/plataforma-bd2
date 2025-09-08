@@ -1,41 +1,66 @@
-from sqlalchemy import Integer, String, ForeignKey
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import DeclarativeBase, MappedColumn, relationship
-from typing import List
+from datetime import datetime, timedelta, UTC
+import secrets
 
-class Base(DeclarativeBase):
-    pass
+from main import  db
 
-class Funcionario(Base):
+class Funcionario(db.Model):
     __tablename__ = 'funcionario'
 
-    id: Mapped[int] = MappedColumn(primary_key=True)
-    cpf: Mapped[str] = MappedColumn(String(14))
-    email: Mapped[str] = MappedColumn(String(100))
-    nome: Mapped[str] = MappedColumn(String(100))
-    endereco: Mapped['Endereco'] = relationship('Endereco',back_populates="funcionario", uselist=False, cascade="all, delete-orphan")
+    id = db.Column(db.Integer, primary_key=True)
+    cpf = db.Column(db.String(14), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    nome = db.Column(db.String(100), nullable=False)
 
-class Endereco(Base):
+    endereco = db.relationship('Endereco', back_populates='funcionario', uselist=False, cascade='all, delete-orphan')
+    user = db.relationship('User', back_populates='funcionario', uselist=False, cascade='all, delete-orphan')
 
+class Endereco(db.Model):
     __tablename__ = 'endereco'
-    id:Mapped[int] = MappedColumn(primary_key=True)
 
-    rua: Mapped[str] = MappedColumn(String(100))
-    bairro: Mapped[str] = MappedColumn(String(100))
-    numero: Mapped[int] = MappedColumn(Integer)
+    id = db.Column(db.Integer, primary_key=True)
+    rua = db.Column(db.String(100), nullable=False)
+    bairro = db.Column(db.String(100), nullable=False)
+    numero = db.Column(db.Integer, nullable=False)
 
-    funcionario_id: Mapped[int] = MappedColumn(ForeignKey('funcionario.id'), unique=True)
-    localidade_id: Mapped[int] = MappedColumn(ForeignKey('localidade.id'))
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionario.id'), unique=True, nullable=False)
+    localidade_id = db.Column(db.Integer, db.ForeignKey('localidade.id'), nullable=False)
 
-    funcionario: Mapped['Funcionario'] = relationship("Funcionario", back_populates="endereco")
-    localidade: Mapped['Localidade'] = relationship("Localidade", back_populates="enderecos")
+    funcionario = db.relationship('Funcionario', back_populates='endereco')
+    localidade = db.relationship('Localidade', back_populates='enderecos')
 
 
-class Localidade(Base):
+class Localidade(db.Model):
     __tablename__ = 'localidade'
 
-    id: Mapped[int] = MappedColumn(primary_key=True)
-    cep: Mapped[str] = MappedColumn(String(10))
-    cidade: Mapped[str] = MappedColumn(String(10))
-    estado: Mapped[str] = MappedColumn(String(2))
-    enderecos: Mapped[List['Endereco']] = relationship('Endereco', back_populates='localidade')
+    id = db.Column(db.Integer, primary_key=True)
+    cep = db.Column(db.String(10), nullable=False)
+    cidade = db.Column(db.String(100), nullable=False)
+    estado = db.Column(db.String(2), nullable=False)
+
+    enderecos = db.relationship('Endereco', back_populates='localidade', cascade='all, delete-orphan')
+
+
+class User(db.Model):
+    __tablename__ = 'user'
+    id = db.Column(db.Integer, primary_key=True)
+    senha = db.Column(db.LargeBinary(60), nullable=False)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionario.id'), unique=True, nullable=False)
+    funcionario = db.relationship('Funcionario', back_populates='user')
+
+
+class Session(db.Model):
+    __tablename__ = 'session'
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_token = db.Column(db.String(64))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref='sessions')
+
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        self.session_token = secrets.token_hex(32)
+
+
+
+
+
