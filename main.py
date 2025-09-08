@@ -1,17 +1,23 @@
 from functools import wraps
 
+from dotenv import load_dotenv
 from flask import Flask, session, request, redirect, url_for, render_template, flash
 from flask_sqlalchemy import  SQLAlchemy
 from flask_migrate import Migrate
 import bcrypt
-import secrets
-from datetime import  UTC, datetime
+import os
+
+db_pass= os.getenv('DB_PASS')
+db_host= os.getenv('DB_HOST')
+db_database= os.getenv('DB_DATABASE')
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "mysql+pymysql://root:alunoifro@127.0.0.1:3306/test"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:{db_pass}@{db_host}:3306/{db_database}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+load_dotenv()
+
+app.secret_key = os.getenv('SECRET_KEY')
 
 db: SQLAlchemy = SQLAlchemy(app)
 
@@ -62,6 +68,12 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/list')
+def list():
+    funcionarios = Funcionario.query.all()
+    return render_template('list.html', funcionarios=funcionarios)
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -95,6 +107,7 @@ def login():
     db.session.commit()
 
     session['token'] = session_db.session_token
+    session['uid'] = func.user.id
 
     return redirect(url_for('home'))
 
@@ -106,9 +119,15 @@ def login():
 @app.route('/', methods=['GET'])
 @login_required
 def home():
+    uid = session['uid']
+
+    funcionario = Funcionario.query.filter(Funcionario.user.has(User.id==uid)).first()
 
 
-    return 'Pra ver aqui tem que tar logado'
+
+
+
+    return render_template('index.html', funcionario=funcionario)
 
 
 
@@ -120,23 +139,58 @@ def register():
     if request.method == 'GET':
         return render_template('register.html')
 
+    # dados básicos
     email = request.form.get('email')
     senha = request.form.get('senha')
     nome = request.form.get('nome')
     cpf = request.form.get('cpf')
 
-    # Cria Funcionario
-    funcionario = Funcionario(email=email, nome=nome, cpf=cpf)
-    db.session.add(funcionario)
-    db.session.commit()
+    # dados de endereço
+    rua = request.form.get('rua')
+    bairro = request.form.get('bairro')
+    numero = request.form.get('numero')
 
-    # Cria User com senha hasheada
-    hashed_senha = hash_password(senha)
-    user = User(funcionario_id=funcionario.id, senha=hashed_senha)
-    db.session.add(user)
-    db.session.commit()
+    # dados de localidade
+    cep = request.form.get('cep')
+    cidade = request.form.get('cidade')
+    estado = request.form.get('estado')
 
-    flash('Usuário criado com sucesso!')
-    return redirect(url_for('login'))
+    try:
+        # cria ou busca Localidade (evita duplicar se já existir)
+        localidade = Localidade.query.filter_by(cep=cep).first()
+        if not localidade:
+            localidade = Localidade(cep=cep, cidade=cidade, estado=estado)
+            db.session.add(localidade)
+            db.session.flush()  # garante que tenha ID
+
+        # cria Funcionario
+        funcionario = Funcionario(email=email, nome=nome, cpf=cpf)
+        db.session.add(funcionario)
+        db.session.flush()
+
+        # cria Endereco associado ao Funcionario + Localidade
+        endereco = Endereco(
+            rua=rua,
+            bairro=bairro,
+            numero=int(numero),
+            funcionario_id=funcionario.id,
+            localidade_id=localidade.id
+        )
+        db.session.add(endereco)
+
+        # cria User com senha hasheada
+        hashed_senha = hash_password(senha)
+        user = User(funcionario_id=funcionario.id, senha=hashed_senha)
+        db.session.add(user)
+
+        db.session.commit()
+
+        flash('Usuário criado com sucesso!')
+        return redirect(url_for('login'))
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erro ao registrar: {str(e)}", "danger")
+        return redirect(url_for('register'))
 
 

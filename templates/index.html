@@ -1,11 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    <p>Olá {{ nome }}</p>
+{% extends "base.html" %}
+{% block content %}
+    <div class="card shadow rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h4>Detalhes do Funcionário</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ funcionario.nome }}</h5>
+            <p class="card-text"><strong>CPF:</strong> {{ funcionario.cpf }}</p>
+            <p class="card-text"><strong>Email:</strong> {{ funcionario.email }}</p>
 
-</body>
-</html>
+            {% if funcionario.endereco %}
+                <hr>
+                <h6>Endereço</h6>
+                <p class="mb-0">
+                    {{ funcionario.endereco.rua }}, {{ funcionario.endereco.numero }}<br>
+                    {{ funcionario.endereco.bairro }}
+                </p>
+
+                {% if funcionario.endereco.localidade %}
+                    <p>
+                        CEP: {{ funcionario.endereco.localidade.cep }}<br>
+                        {{ funcionario.endereco.localidade.cidade }} - {{ funcionario.endereco.localidade.estado }}
+                    </p>
+                {% endif %}
+            {% endif %}
+
+
+        </div>
+
+    </div>
+{% endblock %}
