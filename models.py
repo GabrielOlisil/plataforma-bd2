@@ -12,7 +12,7 @@ class Funcionario(db.Model):
     nome = db.Column(db.String(100), nullable=False)
 
     endereco = db.relationship('Endereco', back_populates='funcionario', uselist=False, cascade='all, delete-orphan')
-    user = db.relationship('User', back_populates='funcionario', uselist=False, cascade='all, delete-orphan')
+    user = db.relationship('AppUser', back_populates='funcionario', uselist=False, cascade='all, delete-orphan')
 
 class Endereco(db.Model):
     __tablename__ = 'endereco'
@@ -40,7 +40,7 @@ class Localidade(db.Model):
     enderecos = db.relationship('Endereco', back_populates='localidade', cascade='all, delete-orphan')
 
 
-class User(db.Model):
+class AppUser(db.Model):
     __tablename__ = 'app_user'
     id = db.Column(db.Integer, primary_key=True)
     senha = db.Column(db.LargeBinary(60), nullable=False)
@@ -54,7 +54,7 @@ class Session(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_token = db.Column(db.String(64))
     user_id = db.Column(db.Integer, db.ForeignKey('app_user.id'), nullable=False)
-    user = db.relationship('User', backref='sessions')
+    user = db.relationship('AppUser', backref='sessions')
 
     def __init__(self, user_id: int):
         self.user_id = user_id

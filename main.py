@@ -32,7 +32,7 @@ def hash_password(password: str) -> bytes:
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed
 
-from models import Funcionario, Endereco, Localidade, Session, User
+from models import Funcionario, Endereco, Localidade, Session, AppUser
 
 
 
@@ -121,11 +121,7 @@ def login():
 def home():
     uid = session['uid']
 
-    funcionario = Funcionario.query.filter(Funcionario.user.has(User.id==uid)).first()
-
-
-
-
+    funcionario = Funcionario.query.filter(Funcionario.user.has(AppUser.id==uid)).first()
 
     return render_template('index.html', funcionario=funcionario)
 
@@ -180,7 +176,7 @@ def register():
 
         # cria User com senha hasheada
         hashed_senha = hash_password(senha)
-        user = User(funcionario_id=funcionario.id, senha=hashed_senha)
+        user = AppUser(funcionario_id=funcionario.id, senha=hashed_senha)
         db.session.add(user)
 
         db.session.commit()
