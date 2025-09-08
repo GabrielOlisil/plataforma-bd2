@@ -12,7 +12,7 @@ db_host= os.getenv('DB_HOST')
 db_database= os.getenv('DB_DATABASE')
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://root:{db_pass}@{db_host}:5432/{db_database}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://postgres:{db_pass}@{db_host}:5432/{db_database}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 load_dotenv()
