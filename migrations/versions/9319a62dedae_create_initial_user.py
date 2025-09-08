@@ -1,23 +1,26 @@
-"""create initial user
+"""create_initial_user
 
-Revision ID: aa175f0a1f30
-Revises: 56893875a758
-Create Date: 2025-09-08 11:45:12.279473
+Revision ID: 9319a62dedae
+Revises: 09f6f124f969
+Create Date: 2025-09-08 16:01:47.592273
 
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import mysql
-import bcrypt
+
 
 # revision identifiers, used by Alembic.
-revision = 'aa175f0a1f30'
-down_revision = '56893875a758'
+revision = '9319a62dedae'
+down_revision = '09f6f124f969'
 branch_labels = None
 depends_on = None
 
-def upgrade():
 
+import sqlalchemy as sa
+from alembic import op
+import bcrypt
+
+def upgrade():
     # Criar hash da senha para inserir
     senha = "senha123"
     salt = bcrypt.gensalt()
@@ -42,14 +45,23 @@ def upgrade():
     # Inserir User com a senha hasheada
     conn.execute(
         sa.text("""
-            INSERT INTO user (funcionario_id, senha) VALUES (:funcionario_id, :senha)
+            INSERT INTO app_user (funcionario_id, senha) VALUES (:funcionario_id, :senha)
         """),
         {"funcionario_id": funcionario_id, "senha": hashed}
     )
 
 
 def downgrade():
-    # Remover dados criados no upgrade
     conn = op.get_bind()
-    conn.execute(sa.text("DELETE FROM user WHERE funcionario_id IN (SELECT id FROM funcionario WHERE email = :email)"), {"email": "admin@exemplo.com"})
-    conn.execute(sa.text("DELETE FROM funcionario WHERE email = :email"), {"email": "admin@exemplo.com"})
+    # Remover dados criados no upgrade
+    conn.execute(
+        sa.text("""
+            DELETE FROM app_user WHERE funcionario_id IN 
+            (SELECT id FROM funcionario WHERE email = :email)
+        """),
+        {"email": "admin@exemplo.com"}
+    )
+    conn.execute(
+        sa.text("DELETE FROM funcionario WHERE email = :email"),
+        {"email": "admin@exemplo.com"}
+    )

@@ -41,7 +41,7 @@ class Localidade(db.Model):
 
 
 class User(db.Model):
-    __tablename__ = 'user'
+    __tablename__ = 'app_user'
     id = db.Column(db.Integer, primary_key=True)
     senha = db.Column(db.LargeBinary(60), nullable=False)
     funcionario_id = db.Column(db.Integer, db.ForeignKey('funcionario.id'), unique=True, nullable=False)
@@ -53,7 +53,7 @@ class Session(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     session_token = db.Column(db.String(64))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('app_user.id'), nullable=False)
     user = db.relationship('User', backref='sessions')
 
     def __init__(self, user_id: int):
